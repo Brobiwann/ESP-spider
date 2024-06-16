@@ -2,6 +2,7 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_PWMServoDriver.h>
+#include <PS4Controller.h>
 
 
 // called this way, it uses the default address 0x40
@@ -18,7 +19,7 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 uint8_t servo_channels[8] = {0, 1, 2, 3, 4, 5, 6, 7};
 
 
-float period_rota = 0.6;
+float period_rota = 0.8;
 float period_lift = period_rota/2;
 
 
@@ -51,6 +52,10 @@ return angle;
 
 void setup() {
 
+  Serial.begin(115200);
+  PS4.begin("1a:1b:1c:1d:1e:1f");
+  Serial.println("Ready.");
+
   pwm.begin();
   pwm.setOscillatorFrequency(27000000); // Setting the oscillator to match the clock of the PCA9685
   pwm.setPWMFreq(SERVO_FREQ);  // Analog servos run at ~50 Hz updates
@@ -67,6 +72,12 @@ void setup() {
 
 
 void loop() {
+
+  if (PS4.isConnected()) {
+
+    if (PS4.Up()) {
+
+
     // Get the current time and add half a period in ms to offset the process
     unsigned long current_time = millis();
 
@@ -96,4 +107,13 @@ void loop() {
         previous_pwm_values[i] = current_pwm_value;
 
         }
+    }
+
+    else {for (int i = 0; i < 8; i++) {
+    pwm.setPWM(servo_channels[i], 0, initial_positions[i]);
+  }
+  delay(200); // Ensure servos have time to reach initial positions
+}
+
+}
 }
