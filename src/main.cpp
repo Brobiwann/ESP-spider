@@ -15,6 +15,7 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 
 #define PI 3.1415926535897932384626433832795
 
+
 // define servos locations pins on the PCA9685
 uint8_t servo_channels[8] = {0, 1, 2, 3, 4, 5, 6, 7};
 
@@ -24,10 +25,13 @@ float period_lift = period_rota/2;
 
 
 uint16_t initial_positions[8] = {280, 270, 280, 310, 280, 260, 280, 310};
-float phase_offset[8] = {PI+PI/2, 0, PI/2, PI, PI+PI/2 , PI, PI/2, 0};
-float period[8] = {period_lift, period_rota, period_lift, period_rota, period_lift, period_rota, period_lift, period_rota};
-int amplitude[8] = {25, 30, 25, 30, 25, 30, 25, 30};
 
+float phase_offset[8];
+float period_offset[8];
+int amplitude[8];
+
+
+uint16_t current_pwm_value = 0;
 uint16_t previous_pwm_values[8] = {280, 380, 280, 300, 280, 280, 280, 280};
 
 // function to calculate the pulse width of the servos depending on the sine wave
@@ -48,12 +52,46 @@ return angle;
 
 }
 
+void Set_Parameters_Up() {
+  float Up_phase_offset[8] = {PI+PI/2, 0, PI/2, PI, PI+PI/2 , PI, PI/2, 0};
+  float Up_period_offset[8] = {period_lift, period_rota, period_lift, period_rota, period_lift, period_rota, period_lift, period_rota};
+  int Up_amplitude[8] = {25, 30, 25, 30, 25, 30, 25, 30};
 
+  for (int i = 0; i < 8; i++) {
+    phase_offset[i] = Up_phase_offset[i];
+    period_offset[i] = Up_period_offset[i];
+    amplitude[i] = Up_amplitude[i];
+  }
+}
+
+void Set_Parameters_Right() {
+  float Right_phase_offset[8] = {PI+PI/2, 0, PI/2, PI, PI+PI/2 , 0, PI/2, PI};
+  float Right_period_offset[8] = {period_lift, period_rota, period_lift, period_rota, period_lift, period_rota, period_lift, period_rota};
+  int Right_amplitude[8] = {25, 30, 25, 30, 25, 30, 25, 30};
+
+  for (int i = 0; i < 8; i++) {
+    phase_offset[i] = Right_phase_offset[i];
+    period_offset[i] = Right_period_offset[i];
+    amplitude[i] = Right_amplitude[i];
+  }
+}
+
+void Set_Parameters_Left() {
+  float Right_phase_offset[8] = {PI+PI/2, 0, PI/2, PI, PI+PI/2 , 0, PI/2, PI};
+  float Right_period_offset[8] = {period_lift, period_rota, period_lift, period_rota, period_lift, period_rota, period_lift, period_rota};
+  int Right_amplitude[8] = {25, 30, 25, 30, 25, 30, 25, 30};
+
+  for (int i = 0; i < 8; i++) {
+    phase_offset[i] = Right_phase_offset[i];
+    period_offset[i] = Right_period_offset[i];
+    amplitude[i] = Right_amplitude[i];
+  }
+}
 
 void setup() {
 
   Serial.begin(115200);
-  PS4.begin("1a:1b:1c:1d:1e:1f");
+  PS4.begin("e4:65:b8:75:7b:44");
   Serial.println("Ready.");
 
   pwm.begin();
@@ -65,7 +103,7 @@ void setup() {
   for (int i = 0; i < 8; i++) {
     pwm.setPWM(servo_channels[i], 0, initial_positions[i]);
   }
-  delay(500); // Ensure servos have time to reach initial positions
+  delay(300); // Ensure servos have time to reach initial positions
 }
 
 
@@ -75,18 +113,60 @@ void loop() {
 
   if (PS4.isConnected()) {
 
-    if (PS4.Up()) {
+    Serial.println("Connected");
 
-
-    // Get the current time and add half a period in ms to offset the process
     unsigned long current_time = millis();
 
-    for (int i = 0; i < 8; i++) {
-        uint16_t current_pwm_value = calculate_servo_pulse(period[i], amplitude[i], phase_offset[i], initial_positions[i]);
+    if (PS4.Up()) {
+
+      Serial.println("Up");
+
+      // Set the offsets, amplitude, period for the robot to go forward
+      Set_Parameters_Up();
+
+
+      for (int i = 0; i < 8; i++) {
+          uint16_t current_pwm_value = calculate_servo_pulse(period_offset[i], amplitude[i], phase_offset[i], initial_positions[i]);
+
+          if (i==0 || i==2) {
+
+          uint16_t pwm_rotation = calculate_servo_pulse(period_offset[i+1], amplitude[i+1], phase_offset[i+1], initial_positions[i+1]);
+          if (pwm_rotation<previous_pwm_values[i+1]){
+            pwm.setPWM(servo_channels[i], 0, current_pwm_value);        
+          }
+        }
+
+        
+          else if (i==4 || i==6) {
+
+            uint16_t pwm_rotation = calculate_servo_pulse(period_offset[i+1], amplitude[i+1], phase_offset[i+1], initial_positions[i+1]);
+            if (pwm_rotation>previous_pwm_values[i+1]){
+            pwm.setPWM(servo_channels[i], 0, current_pwm_value);        
+          }
+        }
+
+          
+        else {pwm.setPWM(servo_channels[i], 0, current_pwm_value);}
+
+        previous_pwm_values[i] = current_pwm_value;
+
+      }
+    }
+
+
+    if (PS4.Right()) {
+
+      Serial.println("Right");
+
+      // Set the offsets, amplitude, period for the robot to go forward
+      Set_Parameters_Right();
+
+     for (int i = 0; i < 8; i++) {
+        uint16_t current_pwm_value = calculate_servo_pulse(period_offset[i], amplitude[i], phase_offset[i], initial_positions[i]);
 
         if (i==0 || i==2) {
 
-          uint16_t pwm_rotation = calculate_servo_pulse(period[i+1], amplitude[i+1], phase_offset[i+1], initial_positions[i+1]);
+          uint16_t pwm_rotation = calculate_servo_pulse(period_offset[i+1], amplitude[i+1], phase_offset[i+1], initial_positions[i+1]);
           if (pwm_rotation<previous_pwm_values[i+1]){
             pwm.setPWM(servo_channels[i], 0, current_pwm_value);        
           }
@@ -95,7 +175,42 @@ void loop() {
         
         else if (i==4 || i==6) {
 
-          uint16_t pwm_rotation = calculate_servo_pulse(period[i+1], amplitude[i+1], phase_offset[i+1], initial_positions[i+1]);
+          uint16_t pwm_rotation = calculate_servo_pulse(period_offset[i+1], amplitude[i+1], phase_offset[i+1], initial_positions[i+1]);
+          if (pwm_rotation<previous_pwm_values[i+1]){
+            pwm.setPWM(servo_channels[i], 0, current_pwm_value);        
+          }
+        }
+
+          
+        else {pwm.setPWM(servo_channels[i], 0, current_pwm_value);}
+
+        previous_pwm_values[i] = current_pwm_value;
+
+      }
+    }
+
+    if (PS4.Left()) {
+
+      Serial.println("Left");
+
+      // Set the offsets, amplitude, period for the robot to go forward
+      Set_Parameters_Left();
+
+     for (int i = 0; i < 8; i++) {
+        uint16_t current_pwm_value = calculate_servo_pulse(period_offset[i], amplitude[i], phase_offset[i], initial_positions[i]);
+
+        if (i==0 || i==2) {
+
+          uint16_t pwm_rotation = calculate_servo_pulse(period_offset[i+1], amplitude[i+1], phase_offset[i+1], initial_positions[i+1]);
+          if (pwm_rotation>previous_pwm_values[i+1]){
+            pwm.setPWM(servo_channels[i], 0, current_pwm_value);        
+          }
+        }
+
+        
+        else if (i==4 || i==6) {
+
+          uint16_t pwm_rotation = calculate_servo_pulse(period_offset[i+1], amplitude[i+1], phase_offset[i+1], initial_positions[i+1]);
           if (pwm_rotation>previous_pwm_values[i+1]){
             pwm.setPWM(servo_channels[i], 0, current_pwm_value);        
           }
@@ -106,14 +221,18 @@ void loop() {
 
         previous_pwm_values[i] = current_pwm_value;
 
-        }
+      }
     }
 
-    else {for (int i = 0; i < 8; i++) {
-    pwm.setPWM(servo_channels[i], 0, initial_positions[i]);
-  }
-  delay(200); // Ensure servos have time to reach initial positions
-}
 
-}
+   if(!PS4.data.button.up && !PS4.data.button.right && !PS4.data.button.left) {
+
+    Serial.println("Initial pos");
+
+    for (int i = 0; i < 8; i++) {
+      pwm.setPWM(servo_channels[i], 0, initial_positions[i]);
+    }
+    delay(200); // Ensure servos have time to reach initial positions
+    }
+  }
 }
