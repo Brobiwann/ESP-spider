@@ -1,0 +1,23 @@
+%TF.GenerationSoftware,KiCad,Pcbnew,8.0.4*%
+%TF.CreationDate,2024-07-27T14:27:44+01:00*%
+%TF.ProjectId,ESP-SPIDER,4553502d-5350-4494-9445-522e6b696361,rev?*%
+%TF.SameCoordinates,Original*%
+%TF.FileFunction,Profile,NP*%
+%FSLAX46Y46*%
+G04 Gerber Fmt 4.6, Leading zero omitted, Abs format (unit mm)*
+G04 Created by KiCad (PCBNEW 8.0.4) date 2024-07-27 14:27:44*
+%MOMM*%
+%LPD*%
+G01*
+G04 APERTURE LIST*
+%TA.AperFunction,Profile*%
+%ADD10C,0.050000*%
+%TD*%
+G04 APERTURE END LIST*
+D10*
+X121158000Y-61214000D02*
+X181356000Y-61214000D01*
+X181356000Y-133282000D01*
+X121158000Y-133282000D01*
+X121158000Y-61214000D01*
+M02*
